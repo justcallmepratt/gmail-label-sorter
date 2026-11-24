@@ -5,8 +5,8 @@ archives. It never deletes.
 
 **Status:** the approach was used on a real inbox of about 52,000 threads in October 2026, with
 AI agents and Gmail's own filters. `Code.gs` is that approach rewritten as a small Apps Script
-anyone can run. The script has been syntax-checked but not yet run against a live mailbox, so
-start with `dryRun()`.
+anyone can run. The script has been checked against a mocked Gmail in Node (label-before-archive
+order, first-rule-wins, undo) but not yet run against a live mailbox, so start with `dryRun()`.
 
 ## The idea
 
@@ -24,15 +24,20 @@ normal Gmail search:
 ```
 
 1. Open [script.google.com](https://script.google.com), create a project and paste in `Code.gs`.
-2. Edit `RULES` for your senders. The ones in the file are examples.
-3. Run `dryRun()` and read the log. Nothing changes.
+2. Add a second file, `Rules.local.gs`, with `var LOCAL_RULES = [ ... ]` in the same shape as
+   `RULES`, listing your own senders. `Code.gs` uses it when present and falls back to its example
+   `RULES` otherwise. `Rules.local.gs` is git-ignored so your senders stay out of a public fork.
+3. Run `dryRun()` and read the log. It says which rule set it used. Nothing changes.
 4. Run `sortInbox()`. Google asks for Gmail permission the first time.
 5. Run `installTrigger()` to sort every hour.
 
 Mail that no rule matches stays in the inbox. That is the signal to add a rule.
 
-**Undo:** `moveLabelBackToInbox('Shopping')` puts a label's threads back. `removeTrigger()` stops
-the hourly run.
+**Undo:** every live run records the IDs of the threads it archived. `undoLastRun()` puts exactly
+those back in the inbox and removes the hourly trigger so they aren't re-sorted; labels and stars
+stay on. A run that matched nothing doesn't overwrite the record. For older runs,
+`moveLabelBackToInbox('Shopping', 2)` moves back archived Shopping threads received in the last two
+days, which can include mail you archived yourself. `removeTrigger()` stops the hourly run.
 
 ## Set up with Claude
 
@@ -80,8 +85,24 @@ labels on the main screen while the inbox itself stays empty.
 - **Sorting surfaces phishing.** Reading sender domains closely turned up lookalike emails. They
   were kept, not deleted, so they could be reported.
 
+## Alternatives
+
+Checked November 2026. The closest open-source tools, and why this one still exists:
+
+| Project | What it does | Difference |
+|---|---|---|
+| [gmailctl](https://github.com/mbrt/gmailctl) (MIT) | Gmail filters as code, with tests | Filters new mail only; can also delete or forward if you write that |
+| [Inbox Zero](https://github.com/elie222/inbox-zero) (AGPL-3.0) | AI rules, bulk archive, unsubscribe; learns from corrections | Needs a server and an LLM; its actions include delete, reply and send |
+| [gmail-automata](https://github.com/ranmocy/gmail-automata) (Apache-2.0) | Apps Script rules kept in a Sheet | Closest design; inactive since 2024 |
+| [imapfilter](https://github.com/lefcha/imapfilter) (MIT) | Lua rules over IMAP | IMAP fits Gmail labels awkwardly; deleting is easy |
+
+This script has no delete, trash, send or reply code at all, runs inside your own Google account
+with no server, and sorts mail already in the inbox as well as new mail.
+
 ## What's next
 
 - A review queue: unmatched senders listed once a week with a suggested label.
 - Learn from corrections, so moving a thread by hand updates the rule.
-- A log sheet of every action, for audit and undo.
+- A log sheet of every action, for audit and undo beyond the last run.
+- Ideas to borrow: gmailctl's rule tests, Inbox Zero's learned sender patterns, and gmail-automata's
+  error label for threads that fail mid-run.
