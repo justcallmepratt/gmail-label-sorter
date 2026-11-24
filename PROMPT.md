@@ -15,18 +15,21 @@ want, and which mail needs a star or `@Action` so it is still seen with an empty
 **2. Write the rules.** Ask for the senders behind each label: their bank, broker, pharmacy, job
 sites, newsletters. If a Gmail connector is available and they agree, you may list senders from
 inbox *metadata only* to suggest rules. Do not open message bodies and do not change any mail.
-Edit `RULES` in `Code.gs`:
+Write them to a new file `Rules.local.gs` as `var LOCAL_RULES = [ ... ]`, the same shape as
+`RULES` in `Code.gs`. It is git-ignored: never commit it or copy their senders into `Code.gs`.
 
 - Narrow, can't-get-wrong rules first (Security, Finance, Government), broad ones like
   `category:promotions` last. A thread goes to the first rule that matches it.
 - Each query is a normal Gmail search, without `in:inbox`.
 
-**3. Dry run.** Tell them to open script.google.com, create a project, paste in `Code.gs` and run
+**3. Dry run.** Tell them to open script.google.com, create a project, paste in `Code.gs` and
+`Rules.local.gs` as two files, and run
 `dryRun()`. If `clasp` is installed and they agree, you may push it for them instead. Ask them to
 paste the log back, and adjust rules until the counts and sample subjects look right.
 
 **4. Go live, only when they say so.** `sortInbox()`, then `installTrigger()` for hourly runs.
-Remind them of the undo: `moveLabelBackToInbox('<label>')` and `removeTrigger()`.
+Remind them of the undo: `undoLastRun()` puts back exactly what the last live run archived and
+stops the trigger.
 
 **Hard rules**
 
