@@ -34,6 +34,12 @@ Mail that no rule matches stays in the inbox. That is the signal to add a rule.
 **Undo:** `moveLabelBackToInbox('Shopping')` puts a label's threads back. `removeTrigger()` stops
 the hourly run.
 
+## Set up with Claude
+
+Open this folder in Claude Code and say **"Follow PROMPT.md."** [`PROMPT.md`](PROMPT.md) has Claude
+agree a label list with you, write `RULES` for your senders, walk you through `dryRun()`, and
+turn on the hourly sort only when you say so. It never touches mail itself.
+
 ## How we solved it
 
 **1. Safety rules before anything else.** Label, then archive, in that order, so a thread is never
